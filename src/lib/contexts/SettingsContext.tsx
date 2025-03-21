@@ -2,7 +2,7 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { Campaign, Settings } from '../types'
-import { DEFAULT_SHEET_URL } from '../config'
+import { DEFAULT_SHEET_URL, SheetTab } from '../config'
 
 export type SettingsContextType = {
   settings: Settings
@@ -11,6 +11,7 @@ export type SettingsContextType = {
   setCurrency: (currency: string) => void
   setSelectedCampaign: (campaignId: string) => void
   setCampaigns: (campaigns: Campaign[]) => void
+  setActiveTab: (tab: SheetTab) => void
 }
 
 const defaultSettings: Settings = {
@@ -60,6 +61,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const setCampaigns = (campaigns: Settings['campaigns']) => {
     setSettings(prev => ({ ...prev, campaigns }))
   }
+  
+  const setActiveTab = (tab: SheetTab) => {
+    setSettings(prev => ({ ...prev, activeTab: tab }))
+  }
 
   const updateSettings = (newSettings: Partial<Settings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }))
@@ -72,7 +77,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSheetUrl,
       setCurrency,
       setSelectedCampaign,
-      setCampaigns
+      setCampaigns,
+      setActiveTab
     }}>
       {children}
     </SettingsContext.Provider>

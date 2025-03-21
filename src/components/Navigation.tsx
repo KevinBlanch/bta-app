@@ -71,6 +71,7 @@ export function Navigation() {
                         </span>
                         <div className="flex items-center gap-4">
                             <NavTab href="/" label="Google Ads Dashboard" />
+                            <NavTab href="/daily2" label="Daily2 Dashboard" />
                             <NavTab href="/terms" label="Search Terms" />
                         </div>
                     </div>

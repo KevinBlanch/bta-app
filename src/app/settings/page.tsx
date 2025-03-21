@@ -13,10 +13,11 @@ import { CURRENCY_OPTIONS } from '@/lib/utils'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Check, ExternalLink } from 'lucide-react'
+import { SHEET_TABS, SheetTab } from '@/lib/config'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { settings, setSheetUrl, setCurrency, setCampaigns } = useSettings()
+  const { settings, setSheetUrl, setCurrency, setCampaigns, setActiveTab } = useSettings()
   const [isLoading, setIsLoading] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [error, setError] = useState<string>()
@@ -120,6 +121,25 @@ export default function SettingsPage() {
                             {option.label}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-base">Default Dashboard Tab</Label>
+                  <div className="mt-2">
+                    <Select 
+                      value={settings.activeTab} 
+                      onValueChange={(value) => setActiveTab(value as SheetTab)}
+                    >
+                      <SelectTrigger className="h-12 w-[200px]">
+                        <SelectValue placeholder="Select default tab" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="daily2">Daily2</SelectItem>
+                        <SelectItem value="searchTerms">Search Terms</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

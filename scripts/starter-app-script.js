@@ -47,6 +47,7 @@ SELECT
   metrics.conversions,
   metrics.cost_micros,
   metrics.impressions,
+  metrics.view_through_conversions,
   segments.date
 FROM campaign
 WHERE segments.date DURING LAST_30_DAYS
@@ -87,7 +88,7 @@ function main() {
     processTab(
       ss,
       DAILY2_TAB,
-      ["campaign", "campaignId", "impr", "clicks", "value", "conv", "cost", "date"],
+      ["campaign", "campaignId", "impr", "clicks", "value", "conv", "cost", "view_through_conv", "date"],
       DAILY2_QUERY,
       processDaily2Data
     );
@@ -200,10 +201,14 @@ function processDaily2Data(rows) {
     const costMicros = Number(row['metrics.cost_micros'] || 0);
     const cost = costMicros / 1000000;  // Convert micros to actual currency
     const impr = Number(row['metrics.impressions'] || 0);
+    
+    // Get view-through conversions as a plain number
+    const viewThroughConv = Number(row['metrics.view_through_conversions'] || 0);
+    
     const date = String(row['segments.date'] || '');
 
     // Create a new row with the data
-    const newRow = [campaign, campaignId, impr, clicks, value, conv, cost, date];
+    const newRow = [campaign, campaignId, impr, clicks, value, conv, cost, viewThroughConv, date];
 
     // Push new row to the data array
     data.push(newRow);

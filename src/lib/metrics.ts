@@ -37,6 +37,7 @@ export function calculateMetrics(data: AdMetric[]): DailyMetrics {
 export function calculateDailyMetrics(data: AdMetric[]): DailyMetrics[] {
   return data.map(d => ({
     ...d,
+    view_through_conv: d.view_through_conv || 0,  // Ensure view_through_conv is always defined
     CTR: d.impr ? (d.clicks / d.impr) * 100 : 0,
     CvR: d.clicks ? (d.conv / d.clicks) * 100 : 0,
     CPA: d.conv ? d.cost / d.conv : 0,

@@ -27,6 +27,7 @@ export interface AdMetric {
   cost: number
   impr: number
   date: string
+  view_through_conv?: number
 }
 
 // Search term metrics
@@ -49,6 +50,7 @@ export interface SearchTermMetric {
 
 // Calculated metrics for daily data
 export interface DailyMetrics extends AdMetric {
+  view_through_conv: number
   CTR: number
   CvR: number
   CPA: number
@@ -96,6 +98,7 @@ export function isAdMetric(data: any): data is AdMetric {
 export type TabData = {
   daily: AdMetric[]
   searchTerms: SearchTermMetric[]
+  daily2: AdMetric[]
 }
 
 // Helper type to get numeric values from metrics

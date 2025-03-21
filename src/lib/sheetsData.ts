@@ -65,6 +65,21 @@ async function fetchTabData(sheetUrl: string, tab: SheetTab): Promise<AdMetric[]
     }
 
     // Daily metrics
+    if (tab === 'daily2') {
+      return rawData.map((row: any) => ({
+        campaign: String(row['campaign'] || ''),
+        campaignId: String(row['campaignId'] || ''),
+        clicks: Number(row['clicks'] || 0),
+        value: Number(row['value'] || 0),
+        conv: Number(row['conv'] || 0),
+        cost: Number(row['cost'] || 0),
+        impr: Number(row['impr'] || 0),
+        view_through_conv: Number(row['view_through_conv'] || 0),
+        date: String(row['date'] || '')
+      }))
+    }
+
+    // Default daily metrics
     return rawData.map((row: any) => ({
       campaign: String(row['campaign'] || ''),
       campaignId: String(row['campaignId'] || ''),
@@ -96,7 +111,7 @@ export async function fetchAllTabsData(sheetUrl: string = DEFAULT_SHEET_URL): Pr
       acc[tab] = data as AdMetric[]
     }
     return acc
-  }, { daily: [], searchTerms: [] } as TabData)
+  }, { daily: [], searchTerms: [], daily2: [] } as TabData)
 }
 
 export function getCampaigns(data: AdMetric[]): Campaign[] {
