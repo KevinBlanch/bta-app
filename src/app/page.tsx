@@ -140,15 +140,24 @@ export default function DashboardPage() {
                     <div key={row} className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                         {Object.entries(metricConfig)
                             .filter(([_, config]) => config.row === row)
-                            .map(([key, config]) => (
-                                <MetricCard
-                                    key={key}
-                                    label={config.label}
-                                    value={config.format(totals[key as DisplayMetric], settings.currency)}
-                                    isSelected={selectedMetrics.includes(key as DisplayMetric)}
-                                    onClick={() => handleMetricClick(key as DisplayMetric)}
-                                />
-                            ))}
+                            .map(([key, config]) => {
+                                const metric = key as DisplayMetric;
+                                const isFirstSelected = selectedMetrics[0] === metric;
+                                const isSecondSelected = selectedMetrics[1] === metric;
+                                const isSelected = isFirstSelected || isSecondSelected;
+                                const color = isFirstSelected ? COLORS.primary : isSecondSelected ? COLORS.secondary : '';
+                                
+                                return (
+                                    <MetricCard
+                                        key={key}
+                                        label={config.label}
+                                        value={config.format(totals[metric], settings.currency)}
+                                        isSelected={isSelected}
+                                        onClick={() => handleMetricClick(metric)}
+                                        color={color}
+                                    />
+                                );
+                            })}
                     </div>
                 ))}
 

@@ -12,14 +12,35 @@ import { fetchAllTabsData, getCampaigns } from '@/lib/sheetsData'
 import { CURRENCY_OPTIONS } from '@/lib/utils'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight } from 'lucide-react'
-import { useToast } from "@/hooks/use-toast"
+import { ArrowRight, Check, ExternalLink } from 'lucide-react'
 
 export default function SettingsPage() {
   const router = useRouter()
   const { settings, setSheetUrl, setCurrency, setCampaigns } = useSettings()
   const [isLoading, setIsLoading] = useState(false)
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [error, setError] = useState<string>()
+  const [connectionSuccess, setConnectionSuccess] = useState(false)
+
+  const testConnection = async () => {
+    setIsTestingConnection(true)
+    setError(undefined)
+    setConnectionSuccess(false)
+
+    try {
+      const allData = await fetchAllTabsData(settings.sheetUrl)
+      if (allData && allData.daily && allData.daily.length > 0) {
+        setConnectionSuccess(true)
+      } else {
+        setError('Connection successful but no data found. Please check your sheet has the correct format.')
+      }
+    } catch (err) {
+      console.error('Error testing connection:', err)
+      setError('Failed to connect. Please check your Sheet URL is correct and publicly accessible.')
+    } finally {
+      setIsTestingConnection(false)
+    }
+  }
 
   const handleUpdate = async () => {
     setIsLoading(true)
@@ -56,10 +77,33 @@ export default function SettingsPage() {
                     <Input
                       id="sheetUrl"
                       value={settings.sheetUrl}
-                      onChange={(e) => setSheetUrl(e.target.value)}
+                      onChange={(e) => {
+                        setSheetUrl(e.target.value)
+                        setConnectionSuccess(false)
+                      }}
                       placeholder="Enter your Google Sheet URL"
                       className="h-12"
                     />
+                    <p className="text-sm text-gray-500 mt-2">
+                      Enter the URL to your published Google Apps Script web app (not the Sheet URL).
+                      It should look like: <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">https://script.google.com/macros/s/...</code>
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={testConnection}
+                        disabled={isTestingConnection || !settings.sheetUrl}
+                      >
+                        {isTestingConnection ? 'Testing...' : 'Test Connection'}
+                      </Button>
+                      {connectionSuccess && (
+                        <div className="flex items-center text-sm text-green-600">
+                          <Check className="w-4 h-4 mr-1" />
+                          Connection successful!
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

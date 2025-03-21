@@ -5,17 +5,43 @@ import { SHEET_TABS, SheetTab, TAB_CONFIGS, DEFAULT_SHEET_URL } from './config'
 async function fetchTabData(sheetUrl: string, tab: SheetTab): Promise<AdMetric[] | SearchTermMetric[]> {
   try {
     const urlWithTab = `${sheetUrl}?tab=${tab}`
+    console.log(`Fetching data from: ${urlWithTab}`)
+    
     const response = await fetch(urlWithTab)
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch data for tab ${tab}`)
+      throw new Error(`HTTP error ${response.status}: Failed to fetch data for tab ${tab}`)
     }
 
-    const rawData = await response.json()
+    let rawData: any;
+    try {
+      rawData = await response.json()
+    } catch (e) {
+      console.error(`Failed to parse JSON response for tab ${tab}:`, e)
+      return []
+    }
+
+    // Check if we got a valid response structure
+    if (!rawData) {
+      console.error(`Empty response for tab ${tab}`)
+      return []
+    }
 
     if (!Array.isArray(rawData)) {
-      console.error(`Response is not an array:`, rawData)
-      return []
+      console.error(`Response is not an array for tab ${tab}:`, rawData)
+      
+      // If it's an object with an error message, log it
+      if (rawData && typeof rawData === 'object' && 'error' in rawData) {
+        console.error(`API Error:`, rawData.error)
+      }
+      
+      // If it's an object with data property that is an array, use that
+      if (rawData && typeof rawData === 'object' && 'data' in rawData && Array.isArray(rawData.data)) {
+        console.log(`Found data array in response object, using that instead`)
+        rawData = rawData.data
+      } else {
+        return []
+      }
     }
 
     // Parse data based on tab type

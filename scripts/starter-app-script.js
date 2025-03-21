@@ -1,7 +1,7 @@
-const SHEET_URL = '';                     // add your sheet url here
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1HlP1yzF6qTFvFwsge4wndahD-ga1JPZnp903D4gCWGE/edit?gid=969514490#gid=969514490';                     // add your sheet url here
 const SEARCH_TERMS_TAB = 'SearchTerms';
 const DAILY_TAB = 'Daily';
-
+const DAILY2_TAB = 'Daily2';  // New duplicate daily tab
 
 // GAQL query for search terms
 const SEARCH_TERMS_QUERY = `
@@ -23,6 +23,22 @@ ORDER BY metrics.cost_micros DESC
 
 // GAQL query for daily campaign data
 const DAILY_QUERY = `
+SELECT
+  campaign.name,
+  campaign.id,
+  metrics.clicks,
+  metrics.conversions_value,
+  metrics.conversions,
+  metrics.cost_micros,
+  metrics.impressions,
+  segments.date
+FROM campaign
+WHERE segments.date DURING LAST_30_DAYS
+ORDER BY segments.date DESC, metrics.cost_micros DESC
+`;
+
+// GAQL query for Daily2 tab (separate copy for future modifications)
+const DAILY2_QUERY = `
 SELECT
   campaign.name,
   campaign.id,
@@ -65,6 +81,15 @@ function main() {
       ["campaign", "campaignId", "impr", "clicks", "value", "conv", "cost", "date"],
       DAILY_QUERY,
       processDailyData
+    );
+    
+    // Process Daily2 tab (duplicate of Daily)
+    processTab(
+      ss,
+      DAILY2_TAB,
+      ["campaign", "campaignId", "impr", "clicks", "value", "conv", "cost", "date"],
+      DAILY2_QUERY,
+      processDaily2Data
     );
 
   } catch (e) {
@@ -136,6 +161,32 @@ function calculateSearchTermsMetrics(rows) {
 }
 
 function processDailyData(rows) {
+  const data = [];
+  while (rows.hasNext()) {
+    const row = rows.next();
+
+    // Extract data according to the requested columns
+    const campaign = String(row['campaign.name'] || '');
+    const campaignId = String(row['campaign.id'] || '');
+    const clicks = Number(row['metrics.clicks'] || 0);
+    const value = Number(row['metrics.conversions_value'] || 0);
+    const conv = Number(row['metrics.conversions'] || 0);
+    const costMicros = Number(row['metrics.cost_micros'] || 0);
+    const cost = costMicros / 1000000;  // Convert micros to actual currency
+    const impr = Number(row['metrics.impressions'] || 0);
+    const date = String(row['segments.date'] || '');
+
+    // Create a new row with the data
+    const newRow = [campaign, campaignId, impr, clicks, value, conv, cost, date];
+
+    // Push new row to the data array
+    data.push(newRow);
+  }
+  return data;
+}
+
+// Separate data processing function for Daily2 tab
+function processDaily2Data(rows) {
   const data = [];
   while (rows.hasNext()) {
     const row = rows.next();
