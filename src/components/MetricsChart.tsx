@@ -139,7 +139,9 @@ export function MetricsChart({
       .call(g => g.selectAll('.tick text')
         .attr('fill', '#64748b')
         .style('text-anchor', 'end')
-        .attr('transform', 'rotate(-45)'))
+        .attr('transform', 'rotate(-45)')
+        .style('font-weight', 'bold')
+        .style('font-size', '12px'))
 
     svg.append('g')
       .call(d3.axisLeft(y1Scale)

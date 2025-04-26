@@ -10,6 +10,7 @@ import { calculateDailyMetrics } from '@/lib/metrics'
 import { MetricCard } from '@/components/MetricCard'
 import { MetricsChart } from '@/components/MetricsChart'
 import { CampaignSelect } from '@/components/CampaignSelect'
+import { PerformanceAnalysis } from '@/components/PerformanceAnalysis'
 import { formatCurrency, formatPercent, formatConversions } from '@/lib/utils'
 import { COLORS } from '@/lib/config'
 
@@ -17,25 +18,31 @@ type DisplayMetric = 'impr' | 'clicks' | 'CTR' | 'CPC' | 'cost' |
     'conv' | 'CvR' | 'CPA' | 'value' | 'ROAS'
 
 const metricConfig = {
+    // Row 1: Traffic metrics (4 metrics)
     impr: { label: 'Impressions', format: (v: number) => v.toLocaleString(), row: 1 },
     clicks: { label: 'Clicks', format: (v: number) => v.toLocaleString(), row: 1 },
     CTR: { label: 'CTR', format: formatPercent, row: 1 },
     CPC: { label: 'CPC', format: (v: number, currency: string) => formatCurrency(v, currency), row: 1 },
-    cost: { label: 'Cost', format: (v: number, currency: string) => formatCurrency(v, currency), row: 1 },
+    
+    // Row 2: Conversion metrics (3 metrics)
     conv: { label: 'Conv', format: formatConversions, row: 2 },
     CvR: { label: 'Conv Rate', format: formatPercent, row: 2 },
     CPA: { label: 'CPA', format: (v: number, currency: string) => formatCurrency(v, currency), row: 2 },
-    value: { label: 'Value', format: (v: number, currency: string) => formatCurrency(v, currency), row: 2 },
-    ROAS: { label: 'ROAS', format: (v: number) => v.toFixed(2) + 'x', row: 2 }
+    
+    // Row 3: Value metrics (3 metrics)
+    cost: { label: 'Cost', format: (v: number, currency: string) => formatCurrency(v, currency), row: 3 },
+    value: { label: 'Value', format: (v: number, currency: string) => formatCurrency(v, currency), row: 3 },
+    ROAS: { label: 'ROAS', format: (v: number) => v.toFixed(2) + 'x', row: 3 }
 } as const
 
 export default function DashboardPage() {
     const { settings, setCampaigns } = useSettings()
     const [data, setData] = useState<AdMetric[]>([])
+    const [daily2Data, setDaily2Data] = useState<AdMetric[]>([])
+    const [selectedCampaignId, setSelectedCampaignId] = useState('')
+    const [error, setError] = useState('')
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string>()
-    const [selectedMetrics, setSelectedMetrics] = useState<[DisplayMetric, DisplayMetric]>(['cost', 'value'])
-    const [selectedCampaignId, setSelectedCampaignId] = useState<string>('')
+    const [selectedMetrics, setSelectedMetrics] = useState<DisplayMetric[]>(['cost', 'value'])
 
     // Aggregate metrics by date when viewing all campaigns
     const aggregateMetricsByDate = (data: AdMetric[]): AdMetric[] => {
@@ -75,7 +82,9 @@ export default function DashboardPage() {
         fetchAllTabsData(settings.sheetUrl)
             .then((allData: TabData) => {
                 const dailyData = allData.daily || []
+                const daily2Data = allData.daily2 || []
                 setData(dailyData)
+                setDaily2Data(daily2Data)
 
                 const campaigns = getCampaigns(dailyData)
                 setCampaigns(campaigns)
@@ -129,37 +138,93 @@ export default function DashboardPage() {
 
     return (
         <DashboardLayout error={error}>
-            <div className="space-y-6">
+            <div className="space-y-4">
                 <CampaignSelect
                     campaigns={settings.campaigns || []}
-                    selectedId={selectedCampaignId}
+                    selectedCampaignId={selectedCampaignId}
                     onSelect={setSelectedCampaignId}
                 />
+                
+                <PerformanceAnalysis 
+                    dailyData={selectedCampaignId 
+                        ? data.filter(d => d.campaignId === selectedCampaignId)
+                        : data}
+                    daily2Data={selectedCampaignId
+                        ? daily2Data.filter(d => d.campaignId === selectedCampaignId)
+                        : daily2Data}
+                />
 
-                {[1, 2].map(row => (
-                    <div key={row} className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                        {Object.entries(metricConfig)
-                            .filter(([_, config]) => config.row === row)
-                            .map(([key, config]) => {
-                                const metric = key as DisplayMetric;
-                                const isFirstSelected = selectedMetrics[0] === metric;
-                                const isSecondSelected = selectedMetrics[1] === metric;
-                                const isSelected = isFirstSelected || isSecondSelected;
-                                const color = isFirstSelected ? COLORS.primary : isSecondSelected ? COLORS.secondary : '';
-                                
-                                return (
-                                    <MetricCard
-                                        key={key}
-                                        label={config.label}
-                                        value={config.format(totals[metric], settings.currency)}
-                                        isSelected={isSelected}
-                                        onClick={() => handleMetricClick(metric)}
-                                        color={color}
-                                    />
-                                );
-                            })}
-                    </div>
-                ))}
+                {/* Row 1: Traffic metrics */}
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                    {Object.entries(metricConfig)
+                        .filter(([_, config]) => config.row === 1)
+                        .map(([key, config]) => {
+                            const metric = key as DisplayMetric;
+                            const isFirstSelected = selectedMetrics[0] === metric;
+                            const isSecondSelected = selectedMetrics[1] === metric;
+                            const isSelected = isFirstSelected || isSecondSelected;
+                            const color = isFirstSelected ? COLORS.primary : isSecondSelected ? COLORS.accent : '';
+                            
+                            return (
+                                <MetricCard
+                                    key={key}
+                                    label={config.label}
+                                    value={config.format(totals[metric], settings.currency)}
+                                    isSelected={isSelected}
+                                    onClick={() => handleMetricClick(metric)}
+                                    color={color}
+                                />
+                            );
+                        })}
+                </div>
+
+                {/* Row 2: Conversion metrics */}
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-3 lg:grid-cols-3">
+                    {Object.entries(metricConfig)
+                        .filter(([_, config]) => config.row === 2)
+                        .map(([key, config]) => {
+                            const metric = key as DisplayMetric;
+                            const isFirstSelected = selectedMetrics[0] === metric;
+                            const isSecondSelected = selectedMetrics[1] === metric;
+                            const isSelected = isFirstSelected || isSecondSelected;
+                            const color = isFirstSelected ? COLORS.primary : isSecondSelected ? COLORS.accent : '';
+                            
+                            return (
+                                <MetricCard
+                                    key={key}
+                                    label={config.label}
+                                    value={config.format(totals[metric], settings.currency)}
+                                    isSelected={isSelected}
+                                    onClick={() => handleMetricClick(metric)}
+                                    color={color}
+                                />
+                            );
+                        })}
+                </div>
+
+                {/* Row 3: Value metrics */}
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-3 lg:grid-cols-3">
+                    {Object.entries(metricConfig)
+                        .filter(([_, config]) => config.row === 3)
+                        .map(([key, config]) => {
+                            const metric = key as DisplayMetric;
+                            const isFirstSelected = selectedMetrics[0] === metric;
+                            const isSecondSelected = selectedMetrics[1] === metric;
+                            const isSelected = isFirstSelected || isSecondSelected;
+                            const color = isFirstSelected ? COLORS.primary : isSecondSelected ? COLORS.accent : '';
+                            
+                            return (
+                                <MetricCard
+                                    key={key}
+                                    label={config.label}
+                                    value={config.format(totals[metric], settings.currency)}
+                                    isSelected={isSelected}
+                                    onClick={() => handleMetricClick(metric)}
+                                    color={color}
+                                />
+                            );
+                        })}
+                </div>
 
                 <MetricsChart
                     data={dailyMetrics}
@@ -172,7 +237,7 @@ export default function DashboardPage() {
                     metric2={{
                         key: selectedMetrics[1],
                         label: metricConfig[selectedMetrics[1]].label,
-                        color: COLORS.secondary,
+                        color: COLORS.accent,
                         format: (v: number) => metricConfig[selectedMetrics[1]].format(v, settings.currency)
                     }}
                 />
@@ -183,12 +248,16 @@ export default function DashboardPage() {
 
 function DashboardLayout({ children, error }: { children: React.ReactNode, error?: string }) {
     return (
-        <div className="container mx-auto px-4 py-12 mt-16">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Build the Agent - Participant Starter Agent</h1>
+        <div className="min-h-screen" style={{ backgroundColor: COLORS.background }}>
+            <div className="container mx-auto px-4 py-12 mt-16">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-3xl font-bold" style={{ color: COLORS.text.primary }}>
+                        Google Ads Dashboard
+                    </h1>
+                </div>
+                {error && <div className="text-red-500 mb-4">{error}</div>}
+                {children}
             </div>
-            {error && <div className="text-red-500 mb-4">{error}</div>}
-            {children}
         </div>
     )
 }

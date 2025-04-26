@@ -12,6 +12,7 @@ export function calculateMetrics(data: AdMetric[]): DailyMetrics {
     cost: acc.cost + d.cost,
     conv: acc.conv + d.conv,
     value: acc.value + d.value,
+    view_through_conv: (acc.view_through_conv || 0) + (d.view_through_conv || 0),
   }), {
     campaign: '',
     campaignId: '',
@@ -20,11 +21,13 @@ export function calculateMetrics(data: AdMetric[]): DailyMetrics {
     impr: 0,
     cost: 0,
     conv: 0,
-    value: 0
+    value: 0,
+    view_through_conv: 0
   } as AdMetric)
 
   return {
     ...totals,
+    view_through_conv: totals.view_through_conv || 0,
     CTR: totals.impr ? (totals.clicks / totals.impr) * 100 : 0,
     CvR: totals.clicks ? (totals.conv / totals.clicks) * 100 : 0,
     CPA: totals.conv ? totals.cost / totals.conv : 0,

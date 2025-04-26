@@ -96,7 +96,7 @@ export function DashboardPage() {
             <div className="mb-8">
                 <CampaignSelect
                     campaigns={campaigns}
-                    selectedId={selectedCampaignId}
+                    selectedCampaignId={selectedCampaignId}
                     onSelect={setSelectedCampaignId}
                 />
             </div>

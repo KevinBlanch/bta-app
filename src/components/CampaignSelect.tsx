@@ -1,48 +1,34 @@
 import { Campaign } from '@/lib/types'
-import { useSettings } from '@/lib/contexts/SettingsContext'
-import { formatCurrency } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface CampaignSelectProps {
   campaigns: Campaign[]
-  selectedId?: string
-  onSelect: (id: string) => void
+  selectedCampaignId: string
+  onSelect: (campaignId: string) => void
 }
 
-export function CampaignSelect({ campaigns, selectedId, onSelect }: CampaignSelectProps) {
-  const { settings } = useSettings()
+const ALL_CAMPAIGNS_VALUE = '_all_'
 
-  // Define inline styles for select and options
-  const optionStyle = {
-    padding: '8px 12px',
-    whiteSpace: 'normal' as 'normal',
-    minHeight: '40px',
-    lineHeight: '1.5',
-    textOverflow: 'unset'
+export function CampaignSelect({ campaigns, selectedCampaignId, onSelect }: CampaignSelectProps) {
+  // Convert empty string to ALL_CAMPAIGNS_VALUE and vice versa
+  const value = selectedCampaignId || ALL_CAMPAIGNS_VALUE
+  const handleSelect = (value: string) => {
+    onSelect(value === ALL_CAMPAIGNS_VALUE ? '' : value)
   }
 
   return (
-    <div className="mb-8 relative">
-      <label htmlFor="campaign" className="block text-lg font-semibold text-gray-900 mb-3">
-        Select Campaign
-      </label>
-      <select
-        id="campaign"
-        value={selectedId || ''}
-        onChange={(e) => onSelect(e.target.value)}
-        className="campaign-select block px-4 py-3 text-base rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors"
-        style={{ textOverflow: 'ellipsis', minWidth: '300px' }}
-      >
-        <option value="" style={optionStyle}>All Campaigns</option>
-        {campaigns.map((campaign) => (
-          <option 
-            key={campaign.id} 
-            value={campaign.id}
-            style={optionStyle}
-          >
-            {campaign.name} ({formatCurrency(campaign.totalCost, settings.currency)})
-          </option>
+    <Select value={value} onValueChange={handleSelect}>
+      <SelectTrigger className="w-[280px]">
+        <SelectValue placeholder="Select a campaign" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={ALL_CAMPAIGNS_VALUE}>All Campaigns</SelectItem>
+        {campaigns.map(campaign => (
+          <SelectItem key={campaign.id} value={campaign.id}>
+            {campaign.name}
+          </SelectItem>
         ))}
-      </select>
-    </div>
+      </SelectContent>
+    </Select>
   )
 } 

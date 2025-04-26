@@ -94,55 +94,11 @@ export function isAdMetric(data: any): data is AdMetric {
   return 'campaignId' in data && 'impr' in data
 }
 
-// Product performance metrics
-export interface ProductMetric {
-  product_title: string
-  impressions: number
-  clicks: number
-  cost: number
-  conversions: number
-  conversion_value: number
-  ctr: number
-  roas: number
-  cvr: number
-}
-
-// Type guard for product metrics
-export function isProductMetric(data: any): data is ProductMetric {
-  return 'product_title' in data && 'impressions' in data
-}
-
-// Configuration information
-export interface ConfigInfo {
-  API_KEY_NATULIM?: string
-  PRODUCT_REVIEW_PROMPT?: string
-  WEBSITE_PRODUCT_TITLE?: string
-  WEBSITE_NATULIM?: string
-}
-
-// Product insight data
-export interface ProductInsight {
-  title: string
-  content: string
-  type: 'positive' | 'negative' | 'suggestion'
-}
-
-// Product title improvement suggestion
-export interface TitleImprovement {
-  originalTitle: string
-  improvedTitle: string
-  explanation: string
-  score: number // 1-10 score for improvement quality
-}
-
 // Combined tab data type
-export interface TabData {
+export type TabData = {
   daily: AdMetric[]
   searchTerms: SearchTermMetric[]
   daily2: AdMetric[]
-  productPerformance: ProductMetric[]
-  configInfo: Record<string, string>
-  api: Record<string, string>
 }
 
 // Helper type to get numeric values from metrics

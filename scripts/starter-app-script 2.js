@@ -2,8 +2,6 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1HlP1yzF6qTFvFwsge4wnd
 const SEARCH_TERMS_TAB = 'SearchTerms';
 const DAILY_TAB = 'Daily';
 const DAILY2_TAB = 'Daily2';  // New duplicate daily tab
-const PRODUCT_PERFORMANCE_TAB = 'ProductPerformance';  // New tab for product performance data
-const API_KEY_RANGE = 'apikey';  // Named range in the Google Sheet for the API key
 
 // GAQL query for search terms
 const SEARCH_TERMS_QUERY = `
@@ -70,116 +68,6 @@ WHERE
   segments.conversion_action_name = "Google Shopping App Purchase"
 `;
 
-// GAQL query for product performance data
-const PRODUCT_PERFORMANCE_QUERY = `
-SELECT
-  ad_group_ad.ad.final_urls,
-  metrics.clicks,
-  metrics.conversions,
-  metrics.cost_micros,
-  metrics.conversions_value,
-  segments.date
-FROM ad_group_ad
-WHERE segments.date DURING LAST_30_DAYS
-  AND campaign.advertising_channel_type = "SHOPPING"
-ORDER BY metrics.cost_micros DESC
-`;
-
-// Function to retrieve the API key from the named range in the Google Sheet
-function getApiKey(ss) {
-  try {
-    const apiKeyRange = ss.getRangeByName(API_KEY_RANGE);
-    if (!apiKeyRange) {
-      Logger.log(`Warning: Named range "${API_KEY_RANGE}" not found in the spreadsheet. Please create a named range called "apikey" containing your API key.`);
-      return '';
-    }
-    const apiKey = apiKeyRange.getValue();
-    Logger.log(`Successfully retrieved API key from named range "${API_KEY_RANGE}"`);
-    return apiKey;
-  } catch (e) {
-    Logger.log(`Error retrieving API key from named range "${API_KEY_RANGE}": ${e}`);
-    return '';
-  }
-}
-
-// Function to analyze performance data
-function analyzePerformanceData(dailyData, daily2Data) {
-  try {
-    // Aggregate metrics
-    const totalMetrics = dailyData.reduce((acc, row) => {
-      acc.cost += Number(row['metrics.cost_micros'] || 0) / 1000000;
-      acc.conversions += Number(row['metrics.conversions'] || 0);
-      acc.value += Number(row['metrics.conversions_value'] || 0);
-      acc.clicks += Number(row['metrics.clicks'] || 0);
-      acc.impressions += Number(row['metrics.impressions'] || 0);
-      return acc;
-    }, { cost: 0, conversions: 0, value: 0, clicks: 0, impressions: 0 });
-
-    // Get view-through conversions from daily2
-    const totalViewThroughConv = daily2Data.reduce((acc, row) => {
-      return acc + Number(row['metrics.view_through_conversions'] || 0);
-    }, 0);
-
-    // Calculate key metrics
-    const cpa = totalMetrics.conversions > 0 ? totalMetrics.cost / totalMetrics.conversions : 0;
-    const roas = totalMetrics.cost > 0 ? totalMetrics.value / totalMetrics.cost : 0;
-    const ctr = totalMetrics.impressions > 0 ? (totalMetrics.clicks / totalMetrics.impressions) * 100 : 0;
-
-    // Generate analysis
-    let analysis = '';
-    
-    if (roas < 1) {
-      analysis = `Campaign performance shows concerning ROAS of ${roas.toFixed(2)}x with CPA at €${cpa.toFixed(2)}. Total conversions: ${totalMetrics.conversions} (plus ${totalViewThroughConv} view-through), CTR: ${ctr.toFixed(2)}%.`;
-    } else if (cpa > 15) {
-      analysis = `Campaign achieving positive ROAS of ${roas.toFixed(2)}x but CPA is high at €${cpa.toFixed(2)}. Total conversions: ${totalMetrics.conversions} (plus ${totalViewThroughConv} view-through), CTR: ${ctr.toFixed(2)}%.`;
-    } else {
-      analysis = `Campaign performing well with ROAS at ${roas.toFixed(2)}x and CPA at €${cpa.toFixed(2)}. Total conversions: ${totalMetrics.conversions} (plus ${totalViewThroughConv} view-through), CTR: ${ctr.toFixed(2)}%.`;
-    }
-
-    return [['Analysis', analysis]];
-  } catch (e) {
-    Logger.log("Error in analyzePerformanceData: " + e);
-    return [['Analysis', 'Unable to generate analysis due to an error.']];
-  }
-}
-
-function processProductPerformanceData(rows) {
-  const data = [];
-  while (rows.hasNext()) {
-    const row = rows.next();
-    
-    // Extract data from the row
-    const finalUrls = row['ad_group_ad.ad.final_urls'] || [];
-    const productTitle = finalUrls.length > 0 ? finalUrls[0].split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown Product';
-    const clicks = Number(row['metrics.clicks'] || 0);
-    const conversions = Number(row['metrics.conversions'] || 0);
-    const costMicros = Number(row['metrics.cost_micros'] || 0);
-    const cost = costMicros / 1000000;  // Convert micros to actual currency
-    const conversionValue = Number(row['metrics.conversions_value'] || 0);
-    const date = String(row['segments.date'] || '');
-
-    // Calculate derived metrics
-    const costPerConversion = conversions > 0 ? cost / conversions : 0;
-    const roas = cost > 0 ? conversionValue / cost : 0;
-
-    // Create a new row with all the data
-    const newRow = [
-      productTitle,
-      clicks,
-      conversions,
-      cost,
-      costPerConversion,
-      conversionValue,
-      roas,
-      date
-    ];
-
-    // Push new row to the data array
-    data.push(newRow);
-  }
-  return data;
-}
-
 function main() {
   try {
     // Access the Google Sheet
@@ -191,10 +79,6 @@ function main() {
     } else {
       ss = SpreadsheetApp.openByUrl(SHEET_URL);
     }
-    
-    // Retrieve the API key from the named range
-    const apiKey = getApiKey(ss);
-    Logger.log(`API Key available for use: ${apiKey ? 'Yes' : 'No'}`);
 
     // First get purchase conversion data
     const purchaseData = getPurchaseConversionData();
@@ -225,15 +109,6 @@ function main() {
       ["campaign", "campaignId", "impr", "clicks", "value", "conv", "cost", "view_through_conv", "date"],
       DAILY2_QUERY,
       (rows) => processDaily2Data(rows, purchaseData)
-    );
-
-    // Process Product Performance tab
-    processTab(
-      ss,
-      PRODUCT_PERFORMANCE_TAB,
-      ["productTitle", "clicks", "conversions", "cost", "costPerConversion", "conversionValue", "roas", "date"],
-      PRODUCT_PERFORMANCE_QUERY,
-      processProductPerformanceData
     );
 
   } catch (e) {

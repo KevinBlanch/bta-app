@@ -73,7 +73,6 @@ export function Navigation() {
                             <NavTab href="/" label="Google Ads Dashboard" />
                             <NavTab href="/daily2" label="Daily2 Dashboard" />
                             <NavTab href="/terms" label="Search Terms" />
-                            <NavTab href="/products" label="Products" />
                         </div>
                     </div>
                     <Link

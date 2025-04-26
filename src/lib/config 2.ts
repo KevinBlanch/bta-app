@@ -2,24 +2,13 @@
 import type { MetricOptions } from './types'
 
 export const COLORS = {
-    primary: '#39b397',    // Primary green
-    secondary: '#a4dccf',  // Secondary green
-    accent: '#2c58a4',     // Primary Blue
-    background: '#f4f6f8', // Light grey background
-    text: {
-        primary: '#2d3748',
-        secondary: '#4a5568',
-        light: '#718096'
-    },
-    card: {
-        background: '#ffffff',
-        border: '#e2e8f0'
-    }
+    primary: '#1e40af',
+    secondary: '#ea580c'
 } as const
 
 export const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxsEZyq9IqjzyK8-Y8HoEAc3lsZSgvaLyWTsO6ntDbqwXcpR6zPEYJFarvOZFkpU2u_/exec'
 
-export const SHEET_TABS = ['daily', 'searchTerms', 'daily2', 'productPerformance', 'configInfo', 'api'] as const
+export const SHEET_TABS = ['daily', 'searchTerms', 'daily2'] as const
 export type SheetTab = typeof SHEET_TABS[number]
 
 export interface TabConfig {
@@ -64,26 +53,5 @@ export const TAB_CONFIGS: Record<SheetTab, TabConfig> = {
             value: { label: 'Value', format: (val: number, currency = '$') => `${currency}${val.toFixed(2)}` },
             view_through_conv: { label: 'View Conv', format: (val: number) => Math.round(val).toLocaleString() }
         }
-    },
-    productPerformance: {
-        name: 'productPerformance',
-        metrics: {
-            impressions: { label: 'Impr', format: (val: number) => val.toLocaleString() },
-            clicks: { label: 'Clicks', format: (val: number) => val.toLocaleString() },
-            cost: { label: 'Cost', format: (val: number, currency = '$') => `${currency}${val.toFixed(2)}` },
-            conversions: { label: 'Conv', format: (val: number) => Math.round(val).toLocaleString() },
-            conversion_value: { label: 'Value', format: (val: number, currency = '$') => `${currency}${val.toFixed(2)}` },
-            ctr: { label: 'CTR', format: (val: number) => `${val.toFixed(1)}%` },
-            roas: { label: 'ROAS', format: (val: number) => `${val.toFixed(2)}x` },
-            cvr: { label: 'CvR', format: (val: number) => `${val.toFixed(1)}%` }
-        }
-    },
-    configInfo: {
-        name: 'configInfo',
-        metrics: {}
-    },
-    api: {
-        name: 'api',
-        metrics: {}
     }
 } 

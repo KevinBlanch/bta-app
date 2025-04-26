@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSettings } from '@/lib/contexts/SettingsContext'
 import { fetchAllTabsData, getCampaigns } from '@/lib/sheetsData'
-import type { AdMetric, DailyMetrics, TabData } from '@/lib/types'
+import type { AdMetric, DailyMetrics, TabData, Campaign } from '@/lib/types'
 import { calculateDailyMetrics } from '@/lib/metrics'
 import { MetricCard } from '@/components/MetricCard'
 import { MetricsChart } from '@/components/MetricsChart'
@@ -58,7 +58,12 @@ export default function Daily2Page() {
             acc[date].cost += metric.cost
             acc[date].conv += metric.conv
             acc[date].value += metric.value
-            acc[date].view_through_conv += (metric.view_through_conv || 0)
+            
+            // Safely add view_through_conv if it exists
+            if (typeof acc[date].view_through_conv === 'number') {
+                acc[date].view_through_conv += (typeof metric.view_through_conv === 'number' ? metric.view_through_conv : 0)
+            }
+            
             return acc
         }, {} as Record<string, AdMetric>)
 
@@ -134,8 +139,8 @@ export default function Daily2Page() {
         <DashboardLayout error={error}>
             <div className="space-y-6">
                 <CampaignSelect
-                    campaigns={settings.campaigns || []}
-                    selectedId={selectedCampaignId}
+                    campaigns={(settings.campaigns || []) as Campaign[]}
+                    selectedCampaignId={selectedCampaignId}
                     onSelect={setSelectedCampaignId}
                 />
 
@@ -148,7 +153,7 @@ export default function Daily2Page() {
                                 const isFirstSelected = selectedMetrics[0] === metric;
                                 const isSecondSelected = selectedMetrics[1] === metric;
                                 const isSelected = isFirstSelected || isSecondSelected;
-                                const color = isFirstSelected ? COLORS.primary : isSecondSelected ? COLORS.secondary : '';
+                                const color = isFirstSelected ? COLORS.primary : isSecondSelected ? COLORS.accent : '';
                                 
                                 return (
                                     <MetricCard
@@ -175,7 +180,7 @@ export default function Daily2Page() {
                     metric2={{
                         key: selectedMetrics[1],
                         label: metricConfig[selectedMetrics[1]].label,
-                        color: COLORS.secondary,
+                        color: COLORS.accent,
                         format: (v: number) => metricConfig[selectedMetrics[1]].format(v, settings.currency)
                     }}
                 />
